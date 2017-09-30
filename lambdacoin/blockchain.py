@@ -1,18 +1,20 @@
 from collections import defaultdict
 
-from .block import GENESIS_BLOCK
+from . import db
+from .block import Block, GENESIS_BLOCK
 
 
 class Blockchain(object):
 
-    def __init__(self):
-        self.blocks = [GENESIS_BLOCK]
-
     def add_block(self, block):
-        if self.is_valid(block) and block.index == self.blocks[-1].index + 1:
-            self.blocks.append(block)
+        last_block = Block.last()
+
+        if self.is_valid(block) and block.index == last_block.index + 1:
+            db.block.insert_one(block.to_json())
 
     def is_valid(self, block):
+        last_block = Block.last()
+
         if block.index == 0 and block.digest != GENESIS_BLOCK.digest:
             return False
 
@@ -25,7 +27,7 @@ class Blockchain(object):
         if block.digest != block.hexdigest():
             return False
 
-        if self.blocks[block.index - 1].digest != block.previous_digest:
+        if last_block.digest != block.previous_digest:
             return False
 
         transactions = defaultdict(int)
@@ -50,14 +52,13 @@ class Blockchain(object):
         return True
 
     def find_transaction(self, transaction):
-        for block in self.blocks:
-            for transaction in block.transactions:
-                if transaction.digest == transaction.digest:
-                    return block
+        return Block.find_one({'transactions.digest': transaction.digest})
 
     def get_balance(self, public_key):
+        blocks = Block.find({'$or': [{'transactions.sender': public_key}, {'transactions.recipient': public_key}]})
         balance = 0
-        for block in self.blocks:
+
+        for block in blocks:
             for transaction in block.transactions:
                 if transaction.sender == public_key:
                     balance -= transaction.amount

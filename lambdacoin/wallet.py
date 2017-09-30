@@ -10,7 +10,7 @@ from .transaction import Transaction
 class Wallet(Client):
 
     def __init__(self, private_key=None):
-        super(Wallet).__init__(self, [])
+        super(Wallet, self).__init__([])
 
         self.__private_key = private_key
         self.__public_key = None
@@ -19,7 +19,7 @@ class Wallet(Client):
 
     def generate_key_pair(self):
         if self.__private_key:
-            self.__private_key = ecdsa.SigningKey.from_string(self.__private_key.decode('hex'))
+            self.__private_key = ecdsa.SigningKey.from_string(self.__private_key.decode('hex'), curve=ecdsa.SECP256k1)
         else:
             self.__private_key = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
 

@@ -3,7 +3,6 @@ from collections import defaultdict
 import requests
 
 from . import DataType
-from .node import Node
 
 
 class Client(object):
@@ -17,23 +16,22 @@ class Client(object):
             'data': data,
         }
 
-        broadcasted = False
+        responses = []
 
         for node in self.nodes.copy().values():
             try:
                 response = requests.post(node.url, json=payload).json()
             except requests.RequestException:
-                self.nodes.pop(node)
+                self.nodes.remove(node)
             else:
-                self.BROADCAST_CB[data_type](response)
-                broadcasted = True
+                responses.append(response)
 
-        return broadcasted
+        return responses
 
     def update_nodes(self, nodes):
-        for node in (Node.from_bson(_node) for _node in nodes):
+        for node in nodes:
             if len(self.nodes) < 10:
-                self.nodes[node.url] = node
+                self.nodes.add(node)
             else:
                 break
 

@@ -2,6 +2,8 @@ import hashlib
 
 import ecdsa
 
+from . import db
+
 
 class Transaction(object):
 
@@ -31,3 +33,11 @@ class Transaction(object):
         public_key = ecdsa.VerifyingKey.from_string(self.sender.decode('hex'))
 
         return self.digest == self.hexdigest() and public_key.verify(self.signature, self.digest)
+
+
+class UnconfirmedTransaction(Transaction):
+
+    @classmethod
+    def find(cls, query=None):
+        return (cls.from_json(transaction)
+                for transaction in db.unconfirmed_transaction.find(query or {}).sort({'index': 1}))
