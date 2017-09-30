@@ -5,6 +5,7 @@ from flask import Flask, request, make_response, jsonify
 
 from .wallet import Wallet
 from .node import Node
+from .miner import Miner
 
 
 def wallet(args):
@@ -20,11 +21,14 @@ def wallet(args):
         wallet = Wallet(private_key=private_key)
 
     print """
+Balance:
+{} λCoin
+
 Public key:
 {}
 
 Private key:
-{}""".format(wallet.public_key, wallet.private_key)
+{}""".format(wallet.balance, wallet.public_key, wallet.private_key)
 
 
 def node(args):
@@ -39,8 +43,11 @@ def node(args):
 
     app.run(host="0.0.0.0", port=int(args.port), debug=True)
 
+
 def miner(args):
-    pass
+    miner = Miner(args.public_key)
+
+    miner.mine()
 
 
 MODULES = {
@@ -63,6 +70,7 @@ def main():
     wallet_parser.set_defaults(func=wallet)
 
     miner_parser = subparsers.add_parser("miner", help="λMiner")
+    miner_parser.add_argument("public_key", help="Wallet public key for rewards")
     miner_parser.set_defaults(func=miner)
 
     node_parser = subparsers.add_parser("node", help="λNode")

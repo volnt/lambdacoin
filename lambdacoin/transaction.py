@@ -15,6 +15,9 @@ class Transaction(object):
         self.signature = signature
         self.digest = digest or self.hexdigest()
 
+    def __repr__(self):
+        return u"Transaction(sender={}, recipient={}, amount={})".format(self.sender, self.recipient, self.amount)
+
     def hexdigest(self):
         return hashlib.sha256(u"{}:{}:{}:{}".format(
             self.sender, self.recipient, self.amount, self.timestamp)).hexdigest()
@@ -29,6 +32,17 @@ class Transaction(object):
             "digest": self.digest,
         }
 
+    @classmethod
+    def from_json(cls, data):
+        return cls(
+            sender=data["sender"],
+            recipient=data["recipient"],
+            amount=data["amount"],
+            signature=data["signature"],
+            timestamp=data["timestamp"],
+            digest=data["digest"],
+        )
+
     def verify(self):
         public_key = ecdsa.VerifyingKey.from_string(self.sender.decode('hex'))
 
@@ -40,4 +54,4 @@ class UnconfirmedTransaction(Transaction):
     @classmethod
     def find(cls, query=None):
         return (cls.from_json(transaction)
-                for transaction in db.unconfirmed_transaction.find(query or {}).sort({'index': 1}))
+                for transaction in db.unconfirmed_transaction.find(query or {}).sort('index', 1))

@@ -5,6 +5,7 @@ import ecdsa
 from . import DataType
 from .client import Client
 from .transaction import Transaction
+from .blockchain import Blockchain
 
 
 class Wallet(Client):
@@ -14,6 +15,7 @@ class Wallet(Client):
 
         self.__private_key = private_key
         self.__public_key = None
+        self.blockchain = Blockchain()
 
         self.generate_key_pair()
 
@@ -46,3 +48,7 @@ class Wallet(Client):
         self.sign(transaction)
 
         return self.broadcast(transaction, DataType.TRANSACTION)
+
+    @property
+    def balance(self):
+        return self.blockchain.get_balance(self.public_key)

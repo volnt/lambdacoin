@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 
 from . import DataType, db
 from .block import Block
@@ -9,7 +10,8 @@ from .transaction import Transaction, UnconfirmedTransaction
 
 class Miner(Client):
 
-    def __init__(self, public_key):
+    def __init__(self, public_key, nodes=None):
+        super(Miner, self).__init__(nodes or set())
         self.public_key = public_key
         self.blockchain = Blockchain()
 
@@ -34,13 +36,13 @@ class Miner(Client):
 
         while True:
             block = Block(
-                index=last_block.index - 1,
+                index=last_block.index + 1,
                 transactions=transactions,
                 timestamp=timestamp,
                 nonce=nonce,
                 previous_digest=last_block.digest)
 
-            if block.digest.startswith("0"):
+            if block.digest.startswith("0000"):
                 return block
 
             nonce += 1
@@ -49,9 +51,19 @@ class Miner(Client):
                 return
 
     def mine(self):
-        block = None
+        while True:
+            block = None
 
-        while not block:
-            block = self.mine_block()
+            while not block:
+                block = self.mine_block()
 
-        self.broadcast(block.to_json(), DataType.BLOCK)
+            print u"Found block {}".format(block.digest)
+
+            responses = self.broadcast(block.to_json(), DataType.BLOCK)
+
+            statuses = defaultdict(int)
+            for response in responses:
+                statuses[response['status']] += 1
+
+            if statuses['confirmed'] >= statuses['error']:
+                self.blockchain.add_block(block)

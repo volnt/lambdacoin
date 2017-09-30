@@ -1,6 +1,7 @@
 import hashlib
 
 from . import db
+from .transaction import Transaction
 
 
 class Block(object):
@@ -13,6 +14,9 @@ class Block(object):
         self.previous_digest = previous_digest
         self.digest = digest or self.hexdigest()
 
+    def __repr__(self):
+        return u"Block(index={}, transactions={})".format(self.index, self.transactions)
+
     def hexdigest(self):
         return hashlib.sha256(u"{}:{}:{}:{}:{}".format(
             self.index, self.transactions, self.timestamp, self.nonce, self.previous_digest)).hexdigest()
@@ -24,7 +28,7 @@ class Block(object):
     def to_json(self):
         return {
             "index": self.index,
-            "transactions": self.transactions,
+            "transactions": [transaction.to_json() for transaction in self.transactions],
             "timestamp": self.timestamp,
             "nonce": self.nonce,
             "previous_digest": self.previous_digest,
@@ -33,13 +37,20 @@ class Block(object):
 
     @classmethod
     def from_json(cls, data):
-        return cls(**data)
+        return cls(
+            index=data["index"],
+            transactions=[Transaction.from_json(transaction) for transaction in data["transactions"]],
+            timestamp=data["timestamp"],
+            nonce=data["nonce"],
+            previous_digest=data["previous_digest"],
+            digest=data["digest"],
+        )
 
     @classmethod
     def last(cls):
-        block = cls.from_json(db.block.find().sort({'index': -1}).limit(1).next())
-
-        if not block:
+        try:
+            block = cls.from_json(db.block.find().sort('index', -1).limit(1).next())
+        except StopIteration:
             db.block.insert_one(GENESIS_BLOCK.to_json())
             return GENESIS_BLOCK
 
@@ -47,7 +58,7 @@ class Block(object):
 
     @classmethod
     def find(cls, query=None):
-        return (cls.from_json(block) for block in db.block.find(query or {}).sort({'index': 1}))
+        return (cls.from_json(block) for block in db.block.find(query or {}).sort('index', 1))
 
     @classmethod
     def find_one(cls, query=None):

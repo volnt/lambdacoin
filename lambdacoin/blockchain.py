@@ -10,7 +10,10 @@ class Blockchain(object):
         last_block = Block.last()
 
         if self.is_valid(block) and block.index == last_block.index + 1:
+            print "Add block {} to blockchain".format(block.digest)
             db.block.insert_one(block.to_json())
+            return True
+        return False
 
     def is_valid(self, block):
         last_block = Block.last()
@@ -21,7 +24,7 @@ class Blockchain(object):
         if block.index == 0:
             return True
 
-        if not block.digest.startswith("0"):
+        if not block.digest.startswith("0000"):
             return False
 
         if block.digest != block.hexdigest():
@@ -46,7 +49,7 @@ class Blockchain(object):
 
         reward = block.transactions[-1]
 
-        if reward.amount != block.reward or reward.sender != "0":
+        if reward.amount != block.reward(block.index) or reward.sender != "0":
             return False
 
         return True
