@@ -1,10 +1,8 @@
-from collections import defaultdict
-
 from . import DataType, db
+from .block import Block
 from .blockchain import Blockchain
 from .client import Client
 from .transaction import Transaction
-from .block import Block
 
 
 class Node(Client):

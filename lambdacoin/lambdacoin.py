@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import argparse
 
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, jsonify, make_response, request
 
-from .wallet import Wallet
-from .node import Node
 from .miner import Miner
+from .node import Node
+from .wallet import Wallet
 
 
 def wallet(args):
